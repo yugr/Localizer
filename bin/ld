@@ -1,0 +1,197 @@
+#!/usr/bin/python3
+
+# Copyright 2021 Yury Gribov
+# 
+# Use of this source code is governed by MIT license that can be
+# found in the LICENSE.txt file.
+#
+# A wrapper for linker.
+
+import argparse
+import json
+import os
+import os.path
+import re
+import shutil
+import subprocess
+import sys
+
+me = os.path.basename(__file__)
+
+def warn(msg):
+  """
+  Print nicely-formatted warning message.
+  """
+  sys.stderr.write('%s: warning: %s\n' % (me, msg))
+
+def error(msg):
+  """
+  Print nicely-formatted error message and exit.
+  """
+  sys.stderr.write('%s: error: %s\n' % (me, msg))
+  sys.exit(1)
+
+def warn_if(cond, msg):
+  if cond:
+    warn(msg)
+
+def error_if(cond, msg):
+  if cond:
+    error(msg)
+
+def run(cmd, **kwargs):
+  """
+  Simple wrapper for subprocess.
+  """
+  if 'fatal' in kwargs:
+    fatal = kwargs['fatal']
+    del kwargs['fatal']
+  else:
+    fatal = False
+  if 'tee' in kwargs:
+    tee = kwargs['tee']
+    del kwargs['tee']
+  else:
+    tee = False
+  if isinstance(cmd, str):
+    cmd = cmd.split(' ')
+#  print(cmd)
+  p = subprocess.Popen(cmd, stdin=None, stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE, **kwargs)
+  out, err = p.communicate()
+  out = out.decode()
+  err = err.decode()
+  if fatal and p.returncode != 0:
+    error("'%s' failed:\n%s%s" % (' '.join(cmd), out, err))
+  if tee:
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+  return p.returncode, out, err
+
+def readelf(filename, extra_args=[]):
+  """ Returns symbol table of ELF file, """
+
+  if not os.path.exists(filename):
+    error("unable to run readelf: file does not exist: %s" % filename)
+
+  if not isinstance(extra_args, list):
+    extra_args = [extra_args]
+  p = subprocess.Popen(["readelf", "-W", filename] + extra_args,
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  out, err = p.communicate()
+  out = out.decode()
+  err = err.decode()
+  if p.returncode != 0 or err:
+    error("readelf failed with retcode %d: %s" % (p.returncode, err))
+
+  toc = None
+  syms = []
+  for line in out.splitlines():
+    line = line.strip()
+    if not line:
+      continue
+    words = re.split(r' +', line)
+    if line.startswith('Num'):  # Header?
+      if toc is not None:
+        error("multiple headers in output of readelf for %s" % filename)
+      toc = {}
+      for i, n in enumerate(words):
+        # Colons are different across readelf versions so get rid of them.
+        n = n.replace(':', '')
+        toc[i] = n
+    elif toc is not None:
+      sym = {k: (words[i] if i < len(words) else '') for i, k in toc.items()}
+      name = sym['Name']
+      if '@' in name:
+        sym['Default'] = '@@' in name
+        name, ver = re.split(r'@+', name)
+        sym['Name'] = name
+        sym['Version'] = ver
+      else:
+        sym['Default'] = True
+        sym['Version'] = None
+      syms.append(sym)
+
+  if toc is None:
+    error("failed to analyze %s" % filename)
+
+  return syms
+
+class LinkerInvocation:
+  def __init__(self, args):
+    self.args = args
+
+  def replace_exe(self, new_exe):
+    self.args[0] = new_exe
+
+  def eval(self):
+    rc, out, err = run(self.args, tee=True)
+    return rc, out, err
+
+  def get_output_file(self):
+    for k, v in zip(self.args, self.args[1:]):
+      if k == '-o':
+        return k[2:] if k[2:] else v
+    return 'a.out'
+
+  def get_object_files(self):
+    return [a for a in self.args if a.endswith('.o')]
+
+  def has_global_exports(self):
+    for a in self.args:
+      # TODO: handle --dynamic-listXXX and --version-script
+      if a in ('-shared', '-Bshareable', '--export-dynamic'):
+        return True
+    return False
+
+def main():
+  tmp_dir = os.environ.get('LOCALIZER_DIR')
+  error_if(tmp_dir is None, "LOCALIZER_DIR variable not set")
+
+  v = int(os.environ.get('LOCALIZER_VERBOSE', 0))
+
+  if v:
+    sys.stderr.write("ld-wrapper: called with: %s\n" % ' '.join(sys.argv))
+
+  inv = LinkerInvocation(sys.argv)
+
+  # Remove ourselves from PATH
+  mydir = os.path.dirname(__file__)
+  new_paths = []
+  for d in os.environ['PATH'].split(os.pathsep):
+    if os.path.exists(d) and not os.path.samefile(d, mydir):
+      new_paths.append(d)
+  os.environ['PATH'] = os.pathsep.join(new_paths)
+  if v:
+    sys.stderr.write("ld-wrapper: updated PATH: %s\n" % os.environ['PATH'])
+
+  inv.replace_exe(os.path.basename(sys.argv[0]))
+
+  rc, out, err = inv.eval()
+
+  # Collect static defs/uses
+  report_data = { 'imports' : [], 'exports' : [], 'global_exports' : []}
+  for o in inv.get_object_files():
+    syms = readelf(o, '-s')
+    for s in syms:
+      if s['Bind'] == 'GLOBAL':
+        lst = report_data['imports' if s['Ndx'] == 'UND' else 'exports']
+        lst.append({'name' : s['Name'], 'file' : o})
+
+  # TODO: locate files that were imported from static libs (use -verbose)
+
+  # Collect dynamic defs (uses are potentially unbounded)
+  out_name = inv.get_output_file()
+  if inv.has_global_exports():
+    for s in readelf(out_name, '--dyn-syms'):
+      if s['Bind'] == 'GLOBAL':
+        report_data['global_exports'].append({'name' : s['Name'], 'file' : out_name})
+
+  report_name = os.path.join(tmp_dir, str(os.getpid()) + '.json')
+  with open(report_name, 'w') as f:
+    json.dump(report_data, f, indent=2, sort_keys=True)
+
+  return rc
+
+if __name__ == '__main__':
+  sys.exit(main())
