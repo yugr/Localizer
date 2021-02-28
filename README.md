@@ -1,4 +1,6 @@
-= What is this
+[![License](http://img.shields.io/:license-MIT-blue.svg)](https://github.com/yugr/Localizer/blob/master/LICENSE.txt)
+
+# What is this
 
 Localizer is a simple experimental tool
 which tries to detect symbols which could be marked as `static`
@@ -6,19 +8,19 @@ which tries to detect symbols which could be marked as `static`
 It does so by intercepting calls to linker and
 analyzing symbol imports and exports.
 
-= How to run
+# How to run
 
 Run your build script under `find-locals.py` script:
 ```
 $ find-locals.py make -j10 clean all
 ```
 
-= How to test
+# How to test
 
 NYI
 
-= TODO
+# TODO
 
 * Run on real projects
 * Collect imports/exports from static libs
-* Run lint
+* Integrate LGTM, Codecov and Travis
