@@ -13,6 +13,7 @@ import atexit
 import json
 import os
 import os.path
+import re
 import subprocess
 import shutil
 import sys
@@ -110,7 +111,7 @@ class Symtab:
     sym.defs.add(origin)
     self.exports.setdefault(name, []).append(origin)
 
-def analyze_reports(reports):
+def analyze_reports(reports, headers):
   # Collect global imports/exports
   symtab = Symtab()
   for report in reports:
@@ -147,12 +148,35 @@ def analyze_reports(reports):
     if not sym.is_imported():
       bad_syms.append(sym)
 
+  contents = []
+  for h in headers:
+    with open(h) as f:
+      contents.append(f.read())
+
+  def is_in_header(name):
+    for content in contents:
+      if re.search(r'\b%s(\s*\(|;)' % name, content):
+        return True
+    return False
+
+  bad_syms = [sym for sym in bad_syms if not is_in_header(sym.name)]
+
   # Print report
   if bad_syms:
     print("Global symbols not imported by any file:")
     for sym in bad_syms:
       first_origin = next(iter(sym.defs))
       print("  %s (%s)" % (sym.name, first_origin))
+
+def find_headers(roots):
+  headers = []
+  for root in roots:
+    for path, dirs, files in os.walk(root):
+      for file in files:
+        ext = os.path.splitext(file)[1]
+        if ext in ('.h', '.hpp'):
+          headers.append(os.path.join(path, file))
+  return headers
 
 def main():
   class Formatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter): pass
@@ -170,6 +194,9 @@ Examples:
                       dest='keep', action='store_false')
   parser.add_argument('--tmp-dir',
                       help="Store temp files in directory")
+  parser.add_argument('--ignore-header-symbols',
+                      help="Do not report symbols that are present in headers in directory",
+                      action='append', default=[])
   parser.add_argument('--verbose', '-v',
                       help="Print diagnostic info (can be specified more than once)",
                       action='count', default=0)
@@ -203,11 +230,14 @@ Examples:
   if rc:
     sys.stderr.write("%s: not collecting data because build has errors\n" % me)
   else:
+    headers = find_headers(args.ignore_header_symbols)
+
     reports = []
     for report_file in os.listdir(tmp_dir):
       with open(os.path.join(tmp_dir, report_file)) as f:
         reports.append(json.load(f))
-    analyze_reports(reports)
+
+    analyze_reports(reports, headers)
 
   return rc
 

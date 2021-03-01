@@ -15,6 +15,13 @@ Run your build script under `find-locals.py` script:
 $ find-locals.py make -j10 clean all
 ```
 
+If you want to ignore symbols which are present in headers, do
+```
+$ find-locals.py --ignore-header-symbols $PWD make ...
+```
+
+For more options, run `find-locals.py -h`.
+
 # How to test
 
 Run
@@ -44,5 +51,5 @@ $ find-locals.py 'make -j 10 && make check'
 # TODO
 
 * Test on real projects
-* Do not report virtual functions which aren't used directly
+* Do not report private class methods (even though they aren't used directly in other files)
 * Integrate LGTM, Codecov and Travis
