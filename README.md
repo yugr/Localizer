@@ -19,8 +19,14 @@ $ find-locals.py make -j10 clean all
 
 NYI
 
+# Limitations
+
+By design the tool is unable to detect conditional uses of symbols
+which are hidden under `#ifdef`s.
+
 # TODO
 
+* Do not report virtual functions which aren't used directly
 * Run on real projects
 * Collect imports/exports from static libs
 * Integrate LGTM, Codecov and Travis
