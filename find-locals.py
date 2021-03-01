@@ -73,8 +73,8 @@ def run(cmd, **kwargs):
 class Symbol:
   def __init__(self, name):
     self.name = name
-    self.defs = []
-    self.uses = []
+    self.defs = set()
+    self.uses = set()
 
   def has_multiple_defs(self):
     return len(self.defs) > 1
@@ -83,7 +83,7 @@ class Symbol:
     return len(self.uses) > 0
 
   def is_system_symbol(self):
-    for origin in self.defs:
+    for origin in sorted(self.defs):
       if origin.startswith("/usr/") or origin.startswith("/lib/"):
         return True
     return False
@@ -102,12 +102,12 @@ class Symtab:
 
   def add_import(self, origin, name):
     sym = self.get_or_create(name)
-    sym.uses.append(origin)
+    sym.uses.add(origin)
     self.imports.setdefault(name, []).append(origin)
 
   def add_export(self, origin, name):
     sym = self.get_or_create(name)
-    sym.defs.append(origin)
+    sym.defs.add(origin)
     self.exports.setdefault(name, []).append(origin)
 
 def analyze_reports(reports):
@@ -136,7 +136,7 @@ def analyze_reports(reports):
       # Skip duplicated symbols
       continue
     warn("symbol %s is defined in multiple files:\n  %s"
-         % (name, '\n  '.join(sym.defs)))
+         % (name, '\n  '.join(sorted(sym.defs))))
 
   # Collect unimported symbols
   bad_syms = []
@@ -151,7 +151,8 @@ def analyze_reports(reports):
   if bad_syms:
     print("Global symbols not imported by any file:")
     for sym in bad_syms:
-      print("  %s (%s)" % (sym.name, sym.defs[0]))
+      first_origin = next(iter(sym.defs))
+      print("  %s (%s)" % (sym.name, first_origin))
 
 def main():
   class Formatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter): pass
