@@ -7,12 +7,10 @@
 #
 # A wrapper for linker.
 
-import argparse
 import json
 import os
 import os.path
 import re
-import shutil
 import subprocess
 import sys
 
@@ -179,7 +177,7 @@ def main():
 
   rc, out, err = inv.eval()
 
-  report_data = { 'cmdline' : sys.argv, 'imports' : [], 'exports' : [], 'global_exports' : []}
+  report_data = {'cmdline' : sys.argv, 'imports' : [], 'exports' : [], 'global_exports' : []}
 
   # Collect symtabs of .o files
   file_map = {}

@@ -133,7 +133,7 @@ def analyze_reports(reports, headers):
     if name[0] == '_':
       # Skip compiler-generated symbols
       continue
-    if name in ('main'):
+    if name in ('main',):
       # Skip duplicated symbols
       continue
     warn("symbol %s is defined in multiple files:\n  %s"
