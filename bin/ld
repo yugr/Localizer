@@ -170,7 +170,7 @@ def main():
   rc, out, err = inv.eval()
 
   # Collect static defs/uses
-  report_data = { 'imports' : [], 'exports' : [], 'global_exports' : []}
+  report_data = { 'cmdline' : sys.argv, 'imports' : [], 'exports' : [], 'global_exports' : []}
   for o in inv.get_object_files():
     syms = readelf(o, '-s')
     for s in syms:
