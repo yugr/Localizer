@@ -187,6 +187,8 @@ def main():
     file_map[o] = readelf(o, '-s')
 
   # Collect symtabs of .o files in static libs
+  # TODO: for global exports we need to know what files were linked
+  # (via 'ld -verbose')
   for lib in inv.get_static_library_files():
     file_map_1 = readelf(lib, '-s')
     for o, syms in sorted(file_map_1.items()):
@@ -199,7 +201,6 @@ def main():
       if s['Bind'] == 'GLOBAL':
         lst = report_data['imports' if s['Ndx'] == 'UND' else 'exports']
         lst.append({'name' : s['Name'], 'file' : o})
-  # TODO: locate files that were imported from static libs (use -verbose)
 
   # Collect dynamic defs (uses are potentially unbounded)
   out_name = inv.get_output_file()
