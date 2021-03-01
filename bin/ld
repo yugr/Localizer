@@ -84,6 +84,8 @@ def readelf(filename, extra_args=[]):
   if p.returncode != 0 or err:
     error("readelf failed with retcode %d: %s" % (p.returncode, err))
 
+  file_map = {}
+
   toc = None
   syms = []
   for line in out.splitlines():
@@ -91,7 +93,12 @@ def readelf(filename, extra_args=[]):
     if not line:
       continue
     words = re.split(r' +', line)
-    if line.startswith('Num'):  # Header?
+    if line.startswith('File: '):  # New file in static library?
+      # File: ./lib/libdiffutils.a(vasnprintf.o)
+      m = re.search(r'\((.*)\)', line)
+      file_map[m.group(1)] = syms = []
+      toc = None
+    elif line.startswith('Num'):  # Header?
       if toc is not None:
         error("multiple headers in output of readelf for %s" % filename)
       toc = {}
@@ -115,7 +122,7 @@ def readelf(filename, extra_args=[]):
   if toc is None:
     error("failed to analyze %s" % filename)
 
-  return syms
+  return file_map if file_map else syms
 
 class LinkerInvocation:
   def __init__(self, args):
@@ -136,6 +143,9 @@ class LinkerInvocation:
 
   def get_object_files(self):
     return [a for a in self.args if a.endswith('.o')]
+
+  def get_static_library_files(self):
+    return [a for a in self.args if a.endswith('.a')]
 
   def has_global_exports(self):
     for a in self.args:
@@ -169,15 +179,26 @@ def main():
 
   rc, out, err = inv.eval()
 
-  # Collect static defs/uses
   report_data = { 'cmdline' : sys.argv, 'imports' : [], 'exports' : [], 'global_exports' : []}
+
+  # Collect symtabs of .o files
+  file_map = {}
   for o in inv.get_object_files():
-    syms = readelf(o, '-s')
+    file_map[o] = readelf(o, '-s')
+
+  # Collect symtabs of .o files in static libs
+  for lib in inv.get_static_library_files():
+    file_map_1 = readelf(lib, '-s')
+    for o, syms in sorted(file_map_1.items()):
+      # TODO: check dups?
+      file_map[o] = syms
+
+  # Collect static defs/uses
+  for o, syms in sorted(file_map.items()):
     for s in syms:
       if s['Bind'] == 'GLOBAL':
         lst = report_data['imports' if s['Ndx'] == 'UND' else 'exports']
         lst.append({'name' : s['Name'], 'file' : o})
-
   # TODO: locate files that were imported from static libs (use -verbose)
 
   # Collect dynamic defs (uses are potentially unbounded)
