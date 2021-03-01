@@ -196,7 +196,7 @@ Examples:
   os.environ['LOCALIZER_DIR'] = tmp_dir
   os.environ['LOCALIZER_VERBOSE'] = str(args.verbose)
 
-  rc, out, err = run([args.cmd] + args.args, fatal=True)
+  rc, out, err = run(['bash', '-c', ' '.join([args.cmd] + args.args)], fatal=True)
   sys.stdout.write(out)
   sys.stderr.write(err)
 
