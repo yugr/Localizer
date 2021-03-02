@@ -25,6 +25,12 @@ If you want to ignore symbols which are present in headers, do
 $ find-locals.py --ignore-header-symbols $PWD make ...
 ```
 
+In many cases symbols are exported so that they can be used in unit tests
+so you may need to build tests as well:
+```
+$ find-locals.py 'make -j10 && make -j10 check'
+```
+
 For more options, run `find-locals.py -h`.
 
 # How to test
@@ -47,14 +53,13 @@ on _unoptimized_ build. For Autotools-enabled projects just do
 $ ./configure CFLAGS='-g -O0' CXXFLAGS='-g -O0'
 ```
 
-Finally, in many cases symbols are exported so that they can be used in tests
-so be sure to build tests as well:
-```
-$ find-locals.py 'make -j 10 && make check'
-```
+Finally, there's no need to report unused C++ methods
+as there's no way to localize them. But I still do this
+because they can't be distinguished from symbols in namespaces
+which _can_ be localized (by moving them to anon. namespaces).
 
 # TODO
 
 * Test on real projects
-* Do not report private class methods (even though they aren't used directly in other files)
 * Integrate LGTM, Codecov and Travis
+* Do not report virtual methods (they aren't directly used in other files)
