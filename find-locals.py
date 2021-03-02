@@ -155,7 +155,7 @@ def analyze_reports(reports, headers):
 
   def is_in_header(name):
     for content in contents:
-      if re.search(r'\b%s\s*[\[(;]|#\s*define\s.*\b%s\b)' % (name, name), content):
+      if re.search(r'\b%s\s*[\[(;]|#\s*define\s.*\b%s\b' % (name, name), content):
         return True
     return False
 
