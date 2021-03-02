@@ -3,9 +3,14 @@
 # What is this
 
 Localizer is a simple experimental tool
-which tries to detect symbols which could be marked as `static`
-(or moved to anon. namespace).
-It does so by intercepting calls to linker and
+which tries to detect symbols which could localized within their module
+i.e. be marked as `static` or moved to anon. namespace.
+
+Localization of symbols is beneficial because it
+[enables optimizations](https://embeddedgurus.com/stack-overflow/2008/12/efficient-c-tips-5-make-local-functions-static/)
+and prevents interface pollution.
+
+The tool works by intercepting calls to linker and
 analyzing symbol imports and exports.
 
 # How to run
