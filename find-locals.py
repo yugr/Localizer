@@ -167,6 +167,8 @@ def analyze_reports(reports, headers):
     for sym in bad_syms:
       first_origin = next(iter(sym.defs))
       print("  %s (%s)" % (sym.name, first_origin))
+  else:
+    print("No violations found (in %d linker invocations)" % len(reports))
 
 def find_headers(roots):
   headers = []
@@ -230,7 +232,7 @@ Examples:
   if rc:
     sys.stderr.write("%s: not collecting data because build has errors\n" % me)
   else:
-    headers = find_headers(os.path.abspath(args.ignore_header_symbols))
+    headers = find_headers(map(os.path.abspath, args.ignore_header_symbols))
 
     reports = []
     for report_file in os.listdir(tmp_dir):
