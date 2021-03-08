@@ -48,7 +48,8 @@ which are hidden under `#ifdef`s.
 Sometimes compiler is also clever enough to optimize out function calls
 even if they are present in text (e.g. by propagating constant arguments
 into static functions). For this reason it's recommended to run the tool
-on _unoptimized_ build. For Autotools-enabled projects just do
+on _unoptimized_ build, to disable function inlining and cloning.
+For Autotools-enabled projects just do
 ```
 $ ./configure CFLAGS='-g -O0' CXXFLAGS='-g -O0'
 ```
@@ -58,8 +59,13 @@ as there's no way to localize them. But I still do this
 because they can't be distinguished from symbols in namespaces
 which _can_ be localized (by moving them to anon. namespaces).
 
+# Findings
+
+15 symbols in [GNU awk](https://lists.gnu.org/archive/html/bug-gawk/2021-03/msg00001.html)
+4 symbols in GNU bc (private communication)
+18 symbols in [GNU screen](https://lists.gnu.org/archive/html/screen-devel/2021-03/msg00000.html)
+
 # TODO
 
-* Test on real projects
 * Integrate LGTM, Codecov and Travis
 * Do not report virtual methods (they aren't directly used in other files)
