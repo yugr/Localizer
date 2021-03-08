@@ -230,7 +230,7 @@ Examples:
   if rc:
     sys.stderr.write("%s: not collecting data because build has errors\n" % me)
   else:
-    headers = find_headers(args.ignore_header_symbols)
+    headers = find_headers(os.path.abspath(args.ignore_header_symbols))
 
     reports = []
     for report_file in os.listdir(tmp_dir):
