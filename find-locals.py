@@ -111,15 +111,17 @@ class Symtab:
     sym.defs.add(origin)
     self.exports.setdefault(name, []).append(origin)
 
-def analyze_reports(reports, headers):
+def analyze_reports(reports, header_syms):
   # Collect global imports/exports
   symtab = Symtab()
   for report in reports:
-    for s in report['exports']:
+    with open(report) as f:
+      contents = json.load(f)
+    for s in contents['exports']:
       symtab.add_export(s['file'], s['name'])
-    for s in report['imports']:
+    for s in contents['imports']:
       symtab.add_import(s['file'], s['name'])
-    for s in report['global_exports']:
+    for s in contents['global_exports']:
       # Here we assume that any symbol exported from shlib has potential outside uses
       # so can't be marked as static.
       # This is an over simplification because very often these exports are accidental.
@@ -145,21 +147,10 @@ def analyze_reports(reports, headers):
     if sym.is_system_symbol():
       # Skip system files
       continue
+    if name in header_syms:
+      continue
     if not sym.is_imported():
       bad_syms.append(sym)
-
-  contents = []
-  for h in headers:
-    with open(h) as f:
-      contents.append(f.read())
-
-  def is_in_header(name):
-    for content in contents:
-      if re.search(r'\b%s\s*[\[(;]|#\s*define\s.*\b%s\b' % (name, name), content):
-        return True
-    return False
-
-  bad_syms = [sym for sym in bad_syms if not is_in_header(sym.name)]
 
   # Print report
   if bad_syms:
@@ -179,6 +170,34 @@ def find_headers(roots):
         if ext in ('.h', '.hpp'):
           headers.append(os.path.join(path, file))
   return headers
+
+def index_headers(headers, v):
+  syms = set()
+  pat = re.compile(r'\b([a-z_][a-z_0-9]*)\s*[\[(;]|#\s*define\s.*\b([a-z_][a-z_0-9]*)\b', re.I)
+  for i, h in enumerate(headers):
+    with open(h) as f:
+      contents = f.read()
+      for first, second in pat.findall(contents):
+        syms.add(first)
+        syms.add(second)
+    if v and i > 0 and i % 100 == 0:
+      print("%s: indexed %d/%d headers..." % (me, i, len(headers)))
+  return syms
+
+def collect_logs(cmd, args, log_dir, v):
+  # Add linker wrappers to PATH
+  bin_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'bin'))
+  os.environ['PATH'] = bin_dir + os.pathsep + os.environ['PATH']
+
+  # Pass settings via environment
+  os.environ['LOCALIZER_DIR'] = log_dir
+  os.environ['LOCALIZER_VERBOSE'] = str(v)
+
+  rc, out, err = run(['bash', '-c', ' '.join([cmd] + args)], fatal=True)
+  sys.stdout.write(out)
+  sys.stderr.write(err)
+
+  return rc
 
 def main():
   class Formatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter): pass
@@ -202,46 +221,38 @@ Examples:
   parser.add_argument('--verbose', '-v',
                       help="Print diagnostic info (can be specified more than once)",
                       action='count', default=0)
-  parser.add_argument('cmd',
-                      help="Program to run", metavar='ARG')
+  parser.add_argument('cmd_or_dir',
+                      help="Program to run OR directory with pre-collected logs", metavar='ARG')
   parser.add_argument('args',
                       nargs=argparse.REMAINDER, default=[])
 
   args = parser.parse_args()
 
-  tmp_dir = args.tmp_dir or tempfile.mkdtemp(prefix='find-locals-')
-  shutil.rmtree(tmp_dir)
-  os.makedirs(tmp_dir, exist_ok=True)
-  if not args.keep:
-    atexit.register(lambda: shutil.rmtree(tmp_dir))
+  if os.path.isdir(args.cmd_or_dir):
+    log_dir = args.cmd_or_dir
   else:
-    sys.stderr.write("%s: intermediate files will be stored in %s\n" % (me, tmp_dir))
+    # Collect logs
 
-  # Add linker wrappers to PATH
-  bin_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'bin'))
-  os.environ['PATH'] = bin_dir + os.pathsep + os.environ['PATH']
+    log_dir = args.tmp_dir or tempfile.mkdtemp(prefix='find-locals-')
+    shutil.rmtree(log_dir)
+    os.makedirs(log_dir, exist_ok=True)
+    if not args.keep:
+      atexit.register(lambda: shutil.rmtree(log_dir))
+    else:
+      sys.stderr.write("%s: intermediate files will be stored in %s\n" % (me, log_dir))
 
-  # Pass settings via environment
-  os.environ['LOCALIZER_DIR'] = tmp_dir
-  os.environ['LOCALIZER_VERBOSE'] = str(args.verbose)
+    rc = collect_logs(args.cmd_or_dir, args.args, log_dir, args.verbose)
+    if rc:
+      sys.stderr.write("%s: not collecting data because build has errors\n" % me)
+      return rc
 
-  rc, out, err = run(['bash', '-c', ' '.join([args.cmd] + args.args)], fatal=True)
-  sys.stdout.write(out)
-  sys.stderr.write(err)
+  headers = find_headers(map(os.path.abspath, args.ignore_header_symbols))
+  header_syms = index_headers(headers, args.verbose)
 
-  if rc:
-    sys.stderr.write("%s: not collecting data because build has errors\n" % me)
-  else:
-    headers = find_headers(map(os.path.abspath, args.ignore_header_symbols))
+  reports = [os.path.join(log_dir, report) for report in os.listdir(log_dir)]
+  analyze_reports(reports, header_syms)
 
-    reports = []
-    for report_file in os.listdir(tmp_dir):
-      with open(os.path.join(tmp_dir, report_file)) as f:
-        reports.append(json.load(f))
-
-    analyze_reports(reports, headers)
-
-  return rc
+  return 0
 
 if __name__ == '__main__':
   sys.exit(main())
