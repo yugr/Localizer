@@ -79,8 +79,10 @@ def readelf(filename, extra_args=[]):
   out, err = p.communicate()
   out = out.decode()
   err = err.decode()
-  if p.returncode != 0 or err:
-    error("readelf failed with retcode %d: %s" % (p.returncode, err))
+  if p.returncode != 0:
+    error("readelf failed with retcode %d: %s: %s" % (p.returncode, filename, err))
+  warn_if(err, "readelf: %s: %s" % (filename, err))
+
 
   file_map = {}
 
@@ -117,8 +119,8 @@ def readelf(filename, extra_args=[]):
         sym['Version'] = None
       syms.append(sym)
 
-  if toc is None:
-    error("failed to analyze %s" % filename)
+  # crtn.o on Ubuntu 16 does not have a symtab
+  warn_if(toc is None, "no symbol table in %s" % filename)
 
   return file_map if file_map else syms
 
