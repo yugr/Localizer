@@ -65,6 +65,7 @@ which _can_ be localized (by moving them to anon. namespaces).
 * 4 symbols in GNU bc (private communication)
 * 18 symbols in [GNU screen](https://lists.gnu.org/archive/html/screen-devel/2021-03/msg00000.html)
 * 6 symbols in [GNU make](https://lists.gnu.org/archive/html/bug-make/2021-03/msg00021.html)
+* 100+ symbols in [QEMU](https://mail.gnu.org/archive/html/qemu-devel/2021-03/msg07706.html)
 
 # TODO
 
