@@ -71,3 +71,4 @@ which _can_ be localized (by moving them to anon. namespaces).
 
 * Integrate LGTM, Codecov and Travis
 * Do not report virtual methods (they aren't directly used in other files)
+* Report C++ symbols only if they are in namespaces (not classes)
