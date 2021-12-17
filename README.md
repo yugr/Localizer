@@ -61,7 +61,7 @@ which _can_ be localized (by moving them to anon. namespaces).
 
 # Findings
 
-* 15 symbols in [GNU awk](https://lists.gnu.org/archive/html/bug-gawk/2021-03/msg00001.html)
+* 15 symbols in [GNU awk](https://lists.gnu.org/archive/html/bug-gawk/2021-03/msg00001.html) (fix [merged](http://git.savannah.gnu.org/cgit/gawk.git/commit/?id=f285f960bdfb5acb50a8ec7ed4b98f17d0bd624a))
 * 4 symbols in GNU bc (private communication)
 * 18 symbols in [GNU screen](https://lists.gnu.org/archive/html/screen-devel/2021-03/msg00000.html)
 * 6 symbols in [GNU make](https://lists.gnu.org/archive/html/bug-make/2021-03/msg00021.html)
