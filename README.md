@@ -1,4 +1,5 @@
 [![License](http://img.shields.io/:license-MIT-blue.svg)](https://github.com/yugr/Localizer/blob/master/LICENSE.txt)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/yugr/Localizer.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/yugr/Localizer/alerts/)
 
 # What is this
 
