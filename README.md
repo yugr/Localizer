@@ -1,4 +1,6 @@
 [![License](http://img.shields.io/:license-MIT-blue.svg)](https://github.com/yugr/Localizer/blob/master/LICENSE.txt)
+[![Build Status](https://github.com/yugr/Localizer/actions/workflows/ci.yml/badge.svg)](https://github.com/yugr/Localizer/actions)
+[![codecov](https://codecov.io/gh/yugr/Localizer/branch/master/graph/badge.svg)](https://codecov.io/gh/yugr/Localizer)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/yugr/Localizer.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/yugr/Localizer/alerts/)
 
 # What is this
