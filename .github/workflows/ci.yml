@@ -1,0 +1,54 @@
+# TODO:
+# * pypy
+
+name: CI
+on:
+  push:
+    paths-ignore:
+    - 'LICENSE.txt'
+    - 'README.md'
+  pull_request:
+    paths-ignore:
+    - 'LICENSE.txt'
+    - 'README.md'
+jobs:
+  Baseline:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04, ubuntu-20.04, ubuntu-latest]
+        py: [python3.5, python3.6, python3.7, python3]
+    runs-on: ${{ matrix.os }}
+    environment: secrets
+    env:
+      PYTHON: ${{ matrix.py }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install deps
+      run: |
+        sudo add-apt-repository ppa:deadsnakes/ppa
+        sudo apt-get update
+        sudo apt-get install ${PYTHON}
+    - name: Run tests
+      run: scripts/travis.sh
+  Coverage:
+    needs: Baseline
+    runs-on: ubuntu-latest
+    environment: secrets
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      PYTHON: 'coverage run -a'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install deps
+      run: sudo pip3 install codecov
+    - name: Run tests
+      run: scripts/travis.sh
+    - name: Upload coverage
+      run: |
+        for t in tests/*; do
+          if test -d $t; then
+            (cd $t && coverage xml)
+          fi
+        done
+        codecov --required

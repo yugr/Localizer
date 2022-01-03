@@ -10,7 +10,7 @@ trap "rm -f $tmp" EXIT
 
 for d in *; do
   if test -d $d; then
-    ../find-locals.py $d/run.sh >$tmp 2>&1
+    ${PYTHON:-python3} ../find-locals.py $d/run.sh >$tmp 2>&1
     if ! diff $tmp $d/output.ref; then
       echo "$d: FAIL"
     else
