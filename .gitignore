@@ -1,4 +1,14 @@
+# Build files
+bin
+
+# GDB
+.gdb_history
+
+# Vim files
 .*.swp
+
+# Test files
 *.a
 *.o
 a.out
+.coverage
