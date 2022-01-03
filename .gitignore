@@ -11,6 +11,6 @@ bin
 *.a
 *.o
 a.out
-.coverage
+.coverage*
 tmp
 output.log

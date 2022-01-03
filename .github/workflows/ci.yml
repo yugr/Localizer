@@ -37,7 +37,7 @@ jobs:
     environment: secrets
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      PYTHON: coverage run -a
+      PYTHON: coverage run -p
     steps:
     - uses: actions/checkout@v2
     - name: Install deps
@@ -48,7 +48,7 @@ jobs:
       run: |
         for t in tests/*; do
           if test -d $t; then
-            (cd $t && coverage xml)
+            (cd $t && coverage xml .coverage*)
           fi
         done
         codecov --required
