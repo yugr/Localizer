@@ -11,7 +11,7 @@ trap "rm -f $tmp" EXIT
 for d in *; do
   if test -d $d; then
     ../find-locals.py $d/run.sh >$tmp 2>&1
-    if ! diff run.log $d/output.ref; then
+    if ! diff $tmp $d/output.ref; then
       echo "$d: FAIL"
     else
       echo "$d: SUCCESS"

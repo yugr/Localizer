@@ -119,8 +119,9 @@ def readelf(filename, extra_args=[]):
         sym['Version'] = None
       syms.append(sym)
 
-  # crtn.o on Ubuntu 16 does not have a symtab
-  warn_if(toc is None, "no symbol table in %s" % filename)
+  # crtn.o on Ubuntu does not have a symtab
+  if os.path.basename(filename) not in {'crtn.o'}:
+    warn_if(toc is None, "no symbol table in %s" % filename)
 
   return file_map if file_map else syms
 
