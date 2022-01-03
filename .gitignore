@@ -12,3 +12,5 @@ bin
 *.o
 a.out
 .coverage
+tmp
+output.log

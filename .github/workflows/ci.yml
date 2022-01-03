@@ -37,7 +37,7 @@ jobs:
     environment: secrets
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      PYTHON: 'coverage run -a'
+      PYTHON: coverage run -a
     steps:
     - uses: actions/checkout@v2
     - name: Install deps
