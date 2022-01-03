@@ -11,4 +11,4 @@ if test -n "${TRAVIS:-}" -o -n "${GITHUB_ACTIONS:-}"; then
   set -x
 fi
 
-$(dirname $0)/tests/run_tests.sh
+$(dirname $0)/../tests/run_tests.sh
