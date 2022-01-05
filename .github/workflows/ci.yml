@@ -41,7 +41,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install deps
-      run: sudo pip3 install codecov
+      run: sudo python3 -mpip install codecov
     - name: Run tests
       env:
         PYTHON: coverage run -p
