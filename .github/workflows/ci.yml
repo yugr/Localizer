@@ -29,6 +29,7 @@ jobs:
         sudo add-apt-repository ppa:deadsnakes/ppa
         sudo apt-get update
         sudo apt-get install ${PYTHON}
+        sudo apt-get install ${PYTHON}-pip || true
     - name: Run tests
       run: scripts/travis.sh
   Coverage:
@@ -37,12 +38,13 @@ jobs:
     environment: secrets
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      PYTHON: coverage run -p
     steps:
     - uses: actions/checkout@v2
     - name: Install deps
       run: sudo pip3 install codecov
     - name: Run tests
+      env:
+        PYTHON: coverage run -p
       run: scripts/travis.sh
     - name: Upload coverage
       run: |
