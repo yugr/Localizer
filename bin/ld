@@ -4,8 +4,10 @@
 # 
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE.txt file.
-#
-# A wrapper for linker.
+
+"""
+A wrapper for linker.
+"""
 
 import json
 import os
@@ -20,13 +22,13 @@ def warn(msg):
   """
   Print nicely-formatted warning message.
   """
-  sys.stderr.write('%s: warning: %s\n' % (me, msg))
+  sys.stderr.write(f'{me}: warning: {msg}\n')
 
 def error(msg):
   """
   Print nicely-formatted error message and exit.
   """
-  sys.stderr.write('%s: error: %s\n' % (me, msg))
+  sys.stderr.write(f'{me}: error: {msg}\n')
   sys.exit(1)
 
 def warn_if(cond, msg):
@@ -54,34 +56,35 @@ def run(cmd, **kwargs):
   if isinstance(cmd, str):
     cmd = cmd.split(' ')
 #  print(cmd)
-  p = subprocess.Popen(cmd, stdin=None, stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE, **kwargs)
-  out, err = p.communicate()
+  with subprocess.Popen(cmd, stdin=None, stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE, **kwargs) as p:
+    out, err = p.communicate()
   out = out.decode()
   err = err.decode()
   if fatal and p.returncode != 0:
-    error("'%s' failed:\n%s%s" % (' '.join(cmd), out, err))
+    cmds = ' '.join(cmd)
+    error(f"'{cmds}' failed:\n{out}{err}")
   if tee:
     sys.stdout.write(out)
     sys.stderr.write(err)
   return p.returncode, out, err
 
-def readelf(filename, extra_args=[]):
+def readelf(filename, extra_args=[]):  # pylint: disable=dangerous-default-value
   """ Returns symbol table of ELF file, """
 
   if not os.path.exists(filename):
-    error("unable to run readelf: file does not exist: %s" % filename)
+    error(f"unable to run readelf: file does not exist: {filename}")
 
   if not isinstance(extra_args, list):
     extra_args = [extra_args]
-  p = subprocess.Popen(["readelf", "-W", filename] + extra_args,
-                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  out, err = p.communicate()
+  with subprocess.Popen(["readelf", "-W", filename] + extra_args,
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
+    out, err = p.communicate()
   out = out.decode()
   err = err.decode()
   if p.returncode != 0:
-    error("readelf failed with retcode %d: %s: %s" % (p.returncode, filename, err))
-  warn_if(err, "readelf: %s: %s" % (filename, err))
+    error(f"readelf failed with retcode {p.returncode}: {filename}: {err}")
+  warn_if(err, f"readelf: {filename}: {err}")
 
 
   file_map = {}
@@ -100,7 +103,7 @@ def readelf(filename, extra_args=[]):
       toc = None
     elif line.startswith('Num'):  # Header?
       if toc is not None:
-        error("multiple headers in output of readelf for %s" % filename)
+        error(f"multiple headers in output of readelf for {filename}")
       toc = {}
       for i, n in enumerate(words):
         # Colons are different across readelf versions so get rid of them.
@@ -121,7 +124,7 @@ def readelf(filename, extra_args=[]):
 
   # crtn.o on Ubuntu does not have a symtab
   if os.path.basename(filename) not in {'crtn.o'}:
-    warn_if(toc is None, "no symbol table in %s" % filename)
+    warn_if(toc is None, f"no symbol table in {filename}")
 
   return file_map if file_map else syms
 
@@ -162,7 +165,8 @@ def main():
   v = int(os.environ.get('LOCALIZER_VERBOSE', 0))
 
   if v:
-    sys.stderr.write("ld-wrapper: called with: %s\n" % ' '.join(sys.argv))
+    argvs = ' '.join(sys.argv)
+    sys.stderr.write(f"ld-wrapper: called with: {argvs}\n")
 
   inv = LinkerInvocation(sys.argv)
 
@@ -174,11 +178,13 @@ def main():
       new_paths.append(d)
   os.environ['PATH'] = os.pathsep.join(new_paths)
   if v:
-    sys.stderr.write("ld-wrapper: updated PATH: %s\n" % os.environ['PATH'])
+    sys.stderr.write(f"ld-wrapper: updated PATH: {os.environ['PATH']}\n")
 
   inv.replace_exe(os.path.basename(sys.argv[0]))
 
   rc, out, err = inv.eval()
+  sys.stdout.write(out)
+  sys.stderr.write(err)
 
   report_data = {'cmdline' : sys.argv, 'imports' : [], 'exports' : [], 'global_exports' : []}
 
@@ -192,7 +198,7 @@ def main():
   # (via 'ld -verbose')
   for lib in inv.get_static_library_files():
     file_map_1 = readelf(lib, '-s')
-    for o, syms in sorted(file_map_1.items()):
+    for o, syms in sorted(file_map_1.items()):  # pylint: disable=no-member  # file_map_1 is really a dict
       # TODO: check dups?
       file_map[o] = syms
 

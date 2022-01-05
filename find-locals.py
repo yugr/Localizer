@@ -4,9 +4,11 @@
 # 
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE.txt file.
-#
-# A simple script which locates functions in codebase which can
-# be changed to statics (or moved to anon. namespace).
+
+"""
+A simple script which locates functions in codebase which can
+be changed to statics (or moved to anon. namespace).
+"""
 
 import argparse
 import atexit
@@ -25,13 +27,13 @@ def warn(msg):
   """
   Print nicely-formatted warning message.
   """
-  sys.stderr.write('%s: warning: %s\n' % (me, msg))
+  sys.stderr.write(f'{me}: warning: {msg}\n')
 
 def error(msg):
   """
   Print nicely-formatted error message and exit.
   """
-  sys.stderr.write('%s: error: %s\n' % (me, msg))
+  sys.stderr.write(f'{me}: error: {msg}\n')
   sys.exit(1)
 
 def warn_if(cond, msg):
@@ -59,13 +61,14 @@ def run(cmd, **kwargs):
   if isinstance(cmd, str):
     cmd = cmd.split(' ')
 #  print(cmd)
-  p = subprocess.Popen(cmd, stdin=None, stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE, **kwargs)
-  out, err = p.communicate()
+  with subprocess.Popen(cmd, stdin=None, stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE, **kwargs) as p:
+    out, err = p.communicate()
   out = out.decode()
   err = err.decode()
   if fatal and p.returncode != 0:
-    error("'%s' failed:\n%s%s" % (' '.join(cmd), out, err))
+    cmds = ' '.join(cmd)
+    error(f"'{cmds}' failed:\n{out}{err}")
   if tee:
     sys.stdout.write(out)
     sys.stderr.write(err)
@@ -157,14 +160,14 @@ def analyze_reports(reports, header_syms):
     print("Global symbols not imported by any file:")
     for sym in bad_syms:
       first_origin = next(iter(sym.defs))
-      print("  %s (%s)" % (sym.name, first_origin))
+      print(f"  {sym.name} ({first_origin})")
   else:
-    print("No violations found (in %d linker invocations)" % len(reports))
+    print(f"No violations found (in {len(reports)} linker invocations)")
 
 def find_headers(roots):
   headers = []
   for root in roots:
-    for path, dirs, files in os.walk(root):
+    for path, _, files in os.walk(root):
       for file in files:
         ext = os.path.splitext(file)[1]
         if ext in ('.h', '.hpp'):
@@ -181,7 +184,7 @@ def index_headers(headers, v):
         syms.add(first)
         syms.add(second)
     if v and i > 0 and i % 100 == 0:
-      print("%s: indexed %d/%d headers..." % (me, i, len(headers)))
+      print(f"{me}: indexed {i}/{len(headers)} headers...")
   return syms
 
 def collect_logs(cmd, args, log_dir, v):
@@ -200,13 +203,14 @@ def collect_logs(cmd, args, log_dir, v):
   return rc
 
 def main():
-  class Formatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter): pass
+  class Formatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
+    pass
   parser = argparse.ArgumentParser(description="Find symbols which may be marked as static",
                                    formatter_class=Formatter,
-                                   epilog="""\
+                                   epilog=f"""\
 Examples:
-  $ python {0} make -j10
-""".format(me))
+  $ python {me} make -j10
+""")
   parser.add_argument('--keep', '-k',
                       help="Do not remove temp files",
                       dest='keep', action='store_true', default=False)
@@ -239,11 +243,11 @@ Examples:
     if not args.keep:
       atexit.register(lambda: shutil.rmtree(log_dir))
     else:
-      sys.stderr.write("%s: intermediate files will be stored in %s\n" % (me, log_dir))
+      sys.stderr.write(f"{me}: intermediate files will be stored in {log_dir}\n")
 
     rc = collect_logs(args.cmd_or_dir, args.args, log_dir, args.verbose)
     if rc:
-      sys.stderr.write("%s: not collecting data because build has errors\n" % me)
+      sys.stderr.write(f"{me}: not collecting data because build has errors\n")
       return rc
 
   headers = find_headers(map(os.path.abspath, args.ignore_header_symbols))
