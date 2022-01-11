@@ -20,7 +20,8 @@ analyzing symbol imports and exports.
 
 Run your build script under `find-locals.py` script:
 ```
-$ find-locals.py make -j10 clean all
+$ make clean
+$ find-locals.py make -j10 all
 ```
 
 If you want to ignore symbols which are present in headers, do
