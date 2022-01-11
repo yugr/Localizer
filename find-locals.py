@@ -222,7 +222,7 @@ Examples:
                       dest='keep', action='store_false')
   parser.add_argument('--tmp-dir',
                       help="Store temp files in directory")
-  parser.add_argument('--ignore-header-symbols',
+  parser.add_argument('--ignore-header-symbols', metavar='DIR',
                       help="Do not report symbols that are present in headers in directory",
                       action='append', default=[])
   parser.add_argument('--verbose', '-v',
