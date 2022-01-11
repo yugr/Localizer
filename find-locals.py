@@ -156,6 +156,8 @@ def analyze_reports(reports, header_syms):
       bad_syms.append(sym)
 
   # Print report
+  sys.stdout.flush()
+  sys.stderr.flush()
   if bad_syms:
     print("Global symbols not imported by any file:")
     for sym in bad_syms:
@@ -196,6 +198,7 @@ def collect_logs(cmd, args, log_dir, v):
   os.environ['LOCALIZER_DIR'] = log_dir
   os.environ['LOCALIZER_VERBOSE'] = str(v)
 
+  # TODO: preserve interactive stdout/stderr
   rc, out, err = run(['bash', '-c', ' '.join([cmd] + args)], fatal=True)
   sys.stdout.write(out)
   sys.stderr.write(err)
