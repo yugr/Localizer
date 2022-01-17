@@ -5,12 +5,15 @@ bin
 .gdb_history
 
 # Vim files
-.*.swp
+.*swp
 
 # Test files
 *.a
 *.o
 a.out
-.coverage*
 tmp
 output.log
+
+# Coverage
+.coverage*
+coverage.xml

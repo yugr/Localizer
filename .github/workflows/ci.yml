@@ -60,7 +60,7 @@ jobs:
       run: |
         for t in tests/*; do
           if test -d $t; then
-            (cd $t && coverage xml .coverage*)
+            (cd $t && coverage combine && coverage xml)
           fi
         done
         codecov --required
