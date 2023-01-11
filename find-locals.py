@@ -172,7 +172,7 @@ def find_headers(roots):
     for path, _, files in os.walk(root):
       for file in files:
         ext = os.path.splitext(file)[1]
-        if ext in ('.h', '.hpp'):
+        if ext in ('.h', '.hpp', '.hh'):
           headers.append(os.path.join(path, file))
   return headers
 
