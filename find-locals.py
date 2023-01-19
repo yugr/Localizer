@@ -199,7 +199,7 @@ def collect_logs(cmd, args, log_dir, v):
   os.environ['LOCALIZER_VERBOSE'] = str(v)
 
   # TODO: preserve interactive stdout/stderr
-  rc, out, err = run(['bash', '-c', ' '.join([cmd] + args)], fatal=True)
+  rc, out, err = run(['bash', '-c', ' '.join([cmd] + args)])
   sys.stdout.write(out)
   sys.stderr.write(err)
 
