@@ -92,6 +92,9 @@ class Symbol:
         return True
     return False
 
+  def first_origin(self):
+    return next(iter(self.defs))
+
 class Symtab:
   def __init__(self):
     self.syms = {}
@@ -146,23 +149,23 @@ def analyze_reports(reports, header_syms):
 
   # Collect unimported symbols
   bad_syms = []
-  for name, sym in sorted(symtab.syms.items()):
+  for name, sym in symtab.syms.items():
     if sym.is_system_symbol():
       # Skip system files
       continue
     if name in header_syms:
       continue
-    if not sym.is_imported():
-      bad_syms.append(sym)
+    if sym.is_imported():
+      continue
+    bad_syms.append(sym)
 
   # Print report
   sys.stdout.flush()
   sys.stderr.flush()
   if bad_syms:
     print("Global symbols not imported by any file:")
-    for sym in bad_syms:
-      first_origin = next(iter(sym.defs))
-      print(f"  {sym.name} ({first_origin})")
+    for org, name in sorted((sym.first_origin(), sym.name) for sym in bad_syms):
+      print(f"  {name} ({org})")
   else:
     print(f"No violations found (in {len(reports)} linker invocations)")
 
