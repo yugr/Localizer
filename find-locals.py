@@ -118,7 +118,7 @@ def analyze_reports(reports, header_syms):
   # Collect global imports/exports
   symtab = Symtab()
   for report in reports:
-    with open(report) as f:
+    with open(report, errors='replace') as f:
       contents = json.load(f)
     for s in contents['exports']:
       symtab.add_export(s['file'], s['name'])
@@ -180,7 +180,7 @@ def index_headers(headers, v):
   syms = set()
   pat = re.compile(r'\b([a-z_][a-z_0-9]*)\s*[\[(;]|#\s*define\s.*\b([a-z_][a-z_0-9]*)\b', re.I)
   for i, h in enumerate(headers):
-    with open(h) as f:
+    with open(h, errors='replace') as f:
       contents = f.read()
       for first, second in pat.findall(contents):
         syms.add(first)
@@ -225,6 +225,9 @@ Examples:
   parser.add_argument('--ignore-header-symbols', metavar='DIR',
                       help="Do not report symbols that are present in headers in directory",
                       action='append', default=[])
+  parser.add_argument('--ignore-retcode',
+                      help="Ignore non-zero error code from build command",
+                      action='store_true', default=False)
   parser.add_argument('--verbose', '-v',
                       help="Print diagnostic info (can be specified more than once)",
                       action='count', default=0)
@@ -249,7 +252,7 @@ Examples:
       sys.stderr.write(f"{me}: intermediate files will be stored in {log_dir}\n")
 
     rc = collect_logs(args.cmd_or_dir, args.args, log_dir, args.verbose)
-    if rc:
+    if rc and not args.ignore_retcode:
       sys.stderr.write(f"{me}: not collecting data because build has errors\n")
       return rc
 
