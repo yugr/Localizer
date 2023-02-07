@@ -241,6 +241,9 @@ Examples:
 
   args = parser.parse_args()
 
+  headers = find_headers(map(os.path.abspath, args.ignore_header_symbols))
+  header_syms = index_headers(headers, args.verbose)
+
   if os.path.isdir(args.cmd_or_dir):
     log_dir = args.cmd_or_dir
   else:
@@ -258,9 +261,6 @@ Examples:
     if rc and not args.ignore_retcode:
       sys.stderr.write(f"{me}: not collecting data because build has errors\n")
       return rc
-
-  headers = find_headers(map(os.path.abspath, args.ignore_header_symbols))
-  header_syms = index_headers(headers, args.verbose)
 
   reports = [os.path.join(log_dir, report) for report in os.listdir(log_dir)]
   analyze_reports(reports, header_syms)
