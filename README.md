@@ -63,6 +63,14 @@ as there's no way to localize them. But I still do this
 because they can't be distinguished from symbols in namespaces
 which _can_ be localized (by moving them to anon. namespaces).
 
+# Cross-compilation
+
+To support cross-compilation you may need to add a symlink to appropriate
+cross-linker in `bin/` directory e.g.
+```
+$ ln -s ld aarch64-linux-gnu-ld
+```
+
 # Findings
 
 * 15 symbols in [GNU awk](https://lists.gnu.org/archive/html/bug-gawk/2021-03/msg00001.html) (fix [merged](http://git.savannah.gnu.org/cgit/gawk.git/commit/?id=f285f960bdfb5acb50a8ec7ed4b98f17d0bd624a))
