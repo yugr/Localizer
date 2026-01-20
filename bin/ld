@@ -149,7 +149,15 @@ class LinkerInvocation:
     return [a for a in self.args if a.endswith('.o')]
 
   def get_static_library_files(self):
-    return [a for a in self.args if a.endswith('.a')]
+    result = []
+    ignore = False
+    for a in self.args:
+      if not ignore and a.endswith('.a'):
+        result.append(a)
+      ignore = False
+      if a in ('--exclude-libs'):
+        ignore = True
+    return result
 
   def has_global_exports(self):
     for a in self.args:

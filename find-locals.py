@@ -180,6 +180,7 @@ def find_headers(roots):
   return headers
 
 def index_headers(headers, v):
+  # TODO: skip comments
   syms = set()
   pat = re.compile(r'\b([a-z_][a-z_0-9]*)\s*[\[(;]|#\s*define\s.*\b([a-z_][a-z_0-9]*)\b', re.I)
   for i, h in enumerate(headers):
@@ -195,7 +196,13 @@ def index_headers(headers, v):
 def collect_logs(cmd, args, log_dir, v):
   # Add linker wrappers to PATH
   bin_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'bin'))
-  os.environ['PATH'] = bin_dir + os.pathsep + os.environ['PATH']
+
+  path = os.environ['PATH']
+  os.environ['PATH'] = bin_dir + os.pathsep + path if path else bin_dir
+
+  # Clang ignores PATH when looking for linker so try harder
+  compiler_path = os.environ.get('COMPILER_PATH', '')
+  os.environ['COMPILER_PATH'] = bin_dir + os.pathsep + compiler_path if compiler_path else bin_dir
 
   # Pass settings via environment
   os.environ['LOCALIZER_DIR'] = log_dir
