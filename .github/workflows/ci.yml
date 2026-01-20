@@ -18,10 +18,13 @@ jobs:
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04, ubuntu-latest]
         py: [python3.7, python3]
+        cc: [[gcc, g++], [clang, clang++]]
     runs-on: ${{ matrix.os }}
     environment: secrets
     env:
       PYTHON: ${{ matrix.py }}
+      CC: ${{ matrix.cc[0] }}
+      CXX: ${{ matrix.cc[1] }}
     steps:
     - uses: actions/checkout@v2
     - name: Install deps
