@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-latest]
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-latest]
         py: [python3.5, python3.6, python3.7, python3]
         exclude:
           - os: ubuntu-22.04
