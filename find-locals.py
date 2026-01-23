@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2021-2023 Yury Gribov
+# Copyright 2021-2026 Yury Gribov
 # 
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE.txt file.
@@ -22,6 +22,7 @@ import sys
 import tempfile
 
 me = os.path.basename(__file__)
+VERBOSE = 0
 
 def warn(msg):
   """
@@ -44,26 +45,16 @@ def error_if(cond, msg):
   if cond:
     error(msg)
 
-def run(cmd, **kwargs):
+def run(cmd, fatal=False, tee=False, stdin='', **kwargs):
   """
   Simple wrapper for subprocess.
   """
-  if 'fatal' in kwargs:
-    fatal = kwargs['fatal']
-    del kwargs['fatal']
-  else:
-    fatal = False
-  if 'tee' in kwargs:
-    tee = kwargs['tee']
-    del kwargs['tee']
-  else:
-    tee = False
   if isinstance(cmd, str):
     cmd = cmd.split(' ')
 #  print(cmd)
-  with subprocess.Popen(cmd, stdin=None, stdout=subprocess.PIPE,
+  with subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE, **kwargs) as p:
-    out, err = p.communicate()
+    out, err = p.communicate(input=stdin.encode('utf-8'))
   out = out.decode()
   err = err.decode()
   if fatal and p.returncode != 0:
@@ -77,6 +68,7 @@ def run(cmd, **kwargs):
 class Symbol:
   def __init__(self, name):
     self.name = name
+    self.demangled_name = None
     self.defs = set()
     self.uses = set()
 
@@ -100,6 +92,9 @@ class Symtab:
     self.syms = {}
     self.imports = {}
     self.exports = {}
+
+  def empty(self):
+    return not self.syms
 
   def get_or_create(self, name):
     sym = self.syms.get(name)
@@ -134,18 +129,36 @@ def analyze_reports(reports, header_syms):
       # But such cases should be checked by dedicated tool ShlibVisibilityChecker.
       symtab.add_import(s['file'], s['name'])
 
-  # Warn about duplicated definitions
-  for name, sym in sorted(symtab.syms.items()):
-    if not sym.has_multiple_defs():
-      continue
-    if name[0] == '_':
-      # Skip compiler-generated symbols
-      continue
-    if name in ('main',):
-      # Skip duplicated symbols
-      continue
-    warn("symbol %s is defined in multiple files:\n  %s"
-         % (name, '\n  '.join(sorted(sym.defs))))
+  if symtab.empty():
+    return
+
+  # Collect demangled names
+  names = sorted(symtab.syms.keys())
+  _, out, _ = run(['c++filt'], stdin='\n'.join(names))
+  out = out.rstrip("\n")  # Some c++filts append newlines at the end
+  for i, demangled_name in enumerate(out.split("\n")):
+    # Find stem
+    j = demangled_name.rfind('(')
+    if j != -1:
+      demangled_name = demangled_name[:j]
+    j = demangled_name.rfind('::')
+    if j != -1:
+      demangled_name = demangled_name[j + 2:]
+    symtab.syms[names[i]].demangled_name = demangled_name
+
+  if VERBOSE:
+    # This happens when several executables are linked from same objects
+    for name, sym in sorted(symtab.syms.items()):
+      if not sym.has_multiple_defs():
+        continue
+      if name[0] == '_':
+        # Skip compiler-generated symbols
+        continue
+      if name in ('main',):
+        # Skip duplicated symbols
+        continue
+      warn("symbol %s is defined in multiple files:\n  %s"
+           % (name, '\n  '.join(sorted(sym.defs))))
 
   # Collect unimported symbols
   bad_syms = []
@@ -153,7 +166,7 @@ def analyze_reports(reports, header_syms):
     if sym.is_system_symbol():
       # Skip system files
       continue
-    if name in header_syms:
+    if sym.demangled_name in header_syms:
       continue
     if sym.is_imported():
       continue
@@ -179,7 +192,7 @@ def find_headers(roots):
           headers.append(os.path.join(path, file))
   return headers
 
-def index_headers(headers, v):
+def index_headers(headers):
   # TODO: skip comments
   syms = set()
   pat = re.compile(r'\b([a-z_][a-z_0-9]*)\s*[\[(;]|#\s*define\s.*\b([a-z_][a-z_0-9]*)\b', re.I)
@@ -189,11 +202,11 @@ def index_headers(headers, v):
       for first, second in pat.findall(contents):
         syms.add(first)
         syms.add(second)
-    if v and i > 0 and i % 100 == 0:
+    if VERBOSE and i > 0 and i % 100 == 0:
       print(f"{me}: indexed {i}/{len(headers)} headers...")
   return syms
 
-def collect_logs(cmd, args, log_dir, v):
+def collect_logs(cmd, args, log_dir):
   # Add linker wrappers to PATH
   bin_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'bin'))
 
@@ -206,7 +219,7 @@ def collect_logs(cmd, args, log_dir, v):
 
   # Pass settings via environment
   os.environ['LOCALIZER_DIR'] = log_dir
-  os.environ['LOCALIZER_VERBOSE'] = str(v)
+  os.environ['LOCALIZER_VERBOSE'] = str(VERBOSE)
 
   # TODO: preserve interactive stdout/stderr
   rc, out, err = run(['bash', '-c', ' '.join([cmd] + args)])
@@ -248,8 +261,11 @@ Examples:
 
   args = parser.parse_args()
 
+  global VERBOSE
+  VERBOSE = args.verbose
+
   headers = find_headers(map(os.path.abspath, args.ignore_header_symbols))
-  header_syms = index_headers(headers, args.verbose)
+  header_syms = index_headers(headers)
 
   if os.path.isdir(args.cmd_or_dir):
     log_dir = args.cmd_or_dir
@@ -257,14 +273,15 @@ Examples:
     # Collect logs
 
     log_dir = args.tmp_dir or tempfile.mkdtemp(prefix='find-locals-')
-    shutil.rmtree(log_dir)
+    if os.path.exists(log_dir):
+      shutil.rmtree(log_dir)
     os.makedirs(log_dir, exist_ok=True)
     if not args.keep:
       atexit.register(lambda: shutil.rmtree(log_dir))
     else:
       sys.stderr.write(f"{me}: intermediate files will be stored in {log_dir}\n")
 
-    rc = collect_logs(args.cmd_or_dir, args.args, log_dir, args.verbose)
+    rc = collect_logs(args.cmd_or_dir, args.args, log_dir)
     if rc and not args.ignore_retcode:
       sys.stderr.write(f"{me}: not collecting data because build has errors\n")
       return rc

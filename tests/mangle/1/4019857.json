@@ -1,0 +1,113 @@
+{
+  "cmdline": [
+    "ld",
+    "-plugin",
+    "/usr/lib/gcc/x86_64-linux-gnu/12/liblto_plugin.so",
+    "-plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/12/lto-wrapper",
+    "-plugin-opt=-fresolution=/tmp/ccPlzr0a.res",
+    "-plugin-opt=-pass-through=-lgcc",
+    "-plugin-opt=-pass-through=-lgcc_s",
+    "-plugin-opt=-pass-through=-lc",
+    "-plugin-opt=-pass-through=-lgcc",
+    "-plugin-opt=-pass-through=-lgcc_s",
+    "--build-id",
+    "--eh-frame-hdr",
+    "-m",
+    "elf_x86_64",
+    "--hash-style=gnu",
+    "--as-needed",
+    "-dynamic-linker",
+    "/lib64/ld-linux-x86-64.so.2",
+    "-pie",
+    "/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/Scrt1.o",
+    "/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/crti.o",
+    "/usr/lib/gcc/x86_64-linux-gnu/12/crtbeginS.o",
+    "-L/usr/lib/gcc/x86_64-linux-gnu/12",
+    "-L/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu",
+    "-L/usr/lib/gcc/x86_64-linux-gnu/12/../../../../lib",
+    "-L/lib/x86_64-linux-gnu",
+    "-L/lib/../lib",
+    "-L/usr/lib/x86_64-linux-gnu",
+    "-L/usr/lib/../lib",
+    "-L/usr/lib/gcc/x86_64-linux-gnu/12/../../..",
+    "/tmp/ccAniJOX.o",
+    "-lgcc",
+    "--push-state",
+    "--as-needed",
+    "-lgcc_s",
+    "--pop-state",
+    "-lc",
+    "-lgcc",
+    "--push-state",
+    "--as-needed",
+    "-lgcc_s",
+    "--pop-state",
+    "/usr/lib/gcc/x86_64-linux-gnu/12/crtendS.o",
+    "/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/crtn.o"
+  ],
+  "exports": [
+    {
+      "file": "/tmp/ccAniJOX.o",
+      "name": "_Z3foov"
+    },
+    {
+      "file": "/tmp/ccAniJOX.o",
+      "name": "main"
+    },
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/Scrt1.o",
+      "name": "_start"
+    },
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/Scrt1.o",
+      "name": "_IO_stdin_used"
+    },
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/Scrt1.o",
+      "name": "__data_start"
+    },
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/crti.o",
+      "name": "_init"
+    },
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/crti.o",
+      "name": "_fini"
+    },
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/crtbeginS.o",
+      "name": "__dso_handle"
+    },
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/crtendS.o",
+      "name": "__TMC_END__"
+    }
+  ],
+  "global_exports": [],
+  "imports": [
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/Scrt1.o",
+      "name": "main"
+    },
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/Scrt1.o",
+      "name": "_GLOBAL_OFFSET_TABLE_"
+    },
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/Scrt1.o",
+      "name": "__libc_start_main"
+    },
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/crti.o",
+      "name": "_GLOBAL_OFFSET_TABLE_"
+    },
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/crtbeginS.o",
+      "name": "__TMC_END__"
+    },
+    {
+      "file": "/usr/lib/gcc/x86_64-linux-gnu/12/crtbeginS.o",
+      "name": "_GLOBAL_OFFSET_TABLE_"
+    }
+  ]
+}

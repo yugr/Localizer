@@ -5,9 +5,8 @@ if set -o | grep -q pipefail; then set -o pipefail; fi
 
 cd $(dirname $0)
 
+rm -f a.out *.o
+
 CC=${CC:-gcc}
 
-$CC -c lib.c
-ar rcs lib.a lib.o
-$CC -c main.c
-$CC main.o lib.a
+$CC main.c other.c
