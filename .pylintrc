@@ -8,6 +8,7 @@ disable = trailing-whitespace,        # In copyrights
           unused-argument,            # Intentional
           missing-class-docstring, missing-function-docstring, # TODO
           too-many-locals, too-many-branches, too-many-boolean-expressions, too-many-statements,
+          global-statement,
 
 [FORMAT]
 
