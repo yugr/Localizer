@@ -69,7 +69,7 @@ class Symbol:
   def __init__(self, name):
     self.name = name
     self.demangled_name = None
-    self.full_demangled_name = None
+    self.demangled_name_full = None
     self.defs = set()
     self.uses = set()
 
