@@ -69,8 +69,27 @@ class Symbol:
   def __init__(self, name):
     self.name = name
     self.demangled_name = None
+    self.full_demangled_name = None
     self.defs = set()
     self.uses = set()
+
+  def set_demangled_name(self, name):
+    self.demangled_name_full = name
+
+    # Find stem
+
+    j = name.rfind('(')
+    if j != -1:
+      name = name[:j]
+
+    j = name.rfind('::')
+    if j != -1:
+      name = name[j + 2:]
+
+    self.demangled_name = name
+
+  def is_dtor(self):
+    return "::~" in self.demangled_name_full
 
   def has_multiple_defs(self):
     return len(self.defs) > 1
@@ -137,14 +156,7 @@ def analyze_reports(reports, header_syms):
   _, out, _ = run(['c++filt'], stdin='\n'.join(names))
   out = out.rstrip("\n")  # Some c++filts append newlines at the end
   for i, demangled_name in enumerate(out.split("\n")):
-    # Find stem
-    j = demangled_name.rfind('(')
-    if j != -1:
-      demangled_name = demangled_name[:j]
-    j = demangled_name.rfind('::')
-    if j != -1:
-      demangled_name = demangled_name[j + 2:]
-    symtab.syms[names[i]].demangled_name = demangled_name
+    symtab.syms[names[i]].set_demangled_name(demangled_name)
 
   if VERBOSE:
     # This happens when several executables are linked from same objects
@@ -163,7 +175,7 @@ def analyze_reports(reports, header_syms):
   # Collect unimported symbols
   bad_syms = []
   for name, sym in symtab.syms.items():
-    if sym.is_system_symbol():
+    if sym.is_system_symbol() or sym.is_dtor():
       # Skip system files
       continue
     if sym.demangled_name in header_syms:
