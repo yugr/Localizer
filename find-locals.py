@@ -247,7 +247,7 @@ def main():
                                    formatter_class=Formatter,
                                    epilog=f"""\
 Examples:
-  $ python {me} make -j10
+  $ python %(prog)s make -j10
 """)
   parser.add_argument('--keep', '-k',
                       help="Do not remove temp files",
