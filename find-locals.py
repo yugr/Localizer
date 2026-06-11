@@ -245,7 +245,7 @@ def main():
     pass
   parser = argparse.ArgumentParser(description="Find symbols which may be marked as static",
                                    formatter_class=Formatter,
-                                   epilog=f"""\
+                                   epilog="""\
 Examples:
   $ python %(prog)s make -j10
 """)
